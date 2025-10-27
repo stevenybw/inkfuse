@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 matplotlib.rcParams.update({'font.size': 20})
 
 systems = ['duckdb', 'umbra_optimized', 'umbra_adaptive', 'inkfuse_fused', 'inkfuse_interpreted', 'inkfuse_hybrid']
+# systems = ['inkfuse_fused', 'inkfuse_interpreted', 'inkfuse_hybrid']
 # Colors of the different systems 
 # DuckDB orange
 # colors = ['#df6f00', '#c5d31f', '#8d9511','#daa6f5','#b056d0', '#782993']
@@ -45,7 +46,8 @@ if __name__ == '__main__':
             con.execute(f"UPDATE results SET query = case when query = 'q14' then 'q8' else query end")
             con.execute(f"UPDATE results SET query = case when query = 'q18' then 'q9' else query end")
 
-    queries = ['Q1', 'Q3', 'Q4', 'Q6', 'Q14', 'Q18']
+    queries = ['Q1', 'Q3', 'Q4', 'Q5', 'Q6', 'Q13']
+    QUERIES = ['\'' + x.lower() + '\'' for x in queries]
 
     # Plot 1: Backends at Different Scale Factors
     gridspec = dict(height_ratios=[2, 3])
@@ -63,6 +65,7 @@ if __name__ == '__main__':
                 f"SELECT query, engine, first(latency) as latency, first(codegen_stalled) as codegen_stalled "
                 f"FROM results o WHERE sf = '{sf}' and engine = '{engine}' "
                 f"  and latency = (SELECT min(latency) FROM results i WHERE sf = '{sf}' and engine = '{engine}' and i.query = o.query)"
+                f"  and query in ({','.join(QUERIES)}) "
                 f"GROUP BY query, engine "
                 f"ORDER BY query").fetchnumpy()
             if len(res['latency']) != 6:
@@ -93,9 +96,9 @@ if __name__ == '__main__':
             # if (pos_x == 1):
                 # axs[pos_x, pos_y].set_xlabel('TPC-H Query')
             if (pos_x == 0):
-            axs[pos_x, pos_y].set_title(f'TPC-H Scale Factor {sf}', y=0.85)
+                axs[pos_x, pos_y].set_title(f'TPC-H Scale Factor {sf}', y=0.85)
             else:
-            axs[pos_x, pos_y].locator_params(axis='y', nbins=6) 
+                axs[pos_x, pos_y].locator_params(axis='y', nbins=6) 
             offset += 0.2
     # HACK - Add empty bar to just get the legend to contain compliation latency
     axs[0, 0].bar(x_vals + offset - 0.19, [0, 0, 0, 0, 0, 0], bottom=[0, 0, 0, 0, 0, 0], width=0.00001, label='Compilation Latency', hatch = global_hatch, color='white', edgecolor = 'black')
